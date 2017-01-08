@@ -41,9 +41,9 @@ import com.google.maps.android.SphericalUtil;
 public class MapsActivity extends FragmentActivity implements OnMapReadyCallback {
 
     private GoogleMap mMap;
-    private UiSettings uiSettings;
     private ArrayList<String[]> CSVwashroomList;
     private ArrayList<Washroom> washroomList;
+    private WashroomManager washroomManager;
     private LocationManager locationManager;
     private LocationListener locationListener;
 
@@ -70,6 +70,7 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
 
         CSVwashroomList = new ArrayList<String[]>();
         washroomList = new ArrayList<Washroom>();
+        washroomManager = washroomManager.getInstance();
 
         InputStream inputStream = getResources().openRawResource(R.raw.vancouver_public_washrooms);
         CSVParser csvParser = new CSVParser(inputStream);
@@ -82,6 +83,7 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
                     newLatLng);
 
             washroomList.add(washroom);
+            washroomManager.addWashroom(washroom);
         }
     }
 
@@ -98,7 +100,6 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
     @Override
     public void onMapReady(GoogleMap googleMap) {
         mMap = googleMap;
-        uiSettings = googleMap.getUiSettings();
 
         // when location changes
         locationManager = (LocationManager) this.getSystemService(Context.LOCATION_SERVICE);
@@ -107,16 +108,20 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
             public void onLocationChanged(Location location) {
                 LatLng userLocation = new LatLng(location.getLatitude(), location.getLongitude());
                 mMap.clear();
+                ArrayList<Marker> markerList = new ArrayList<>();
 
                 for (Washroom washroom : washroomList) {
-                    Double delta = SphericalUtil.computeDistanceBetween(userLocation, washroom.getLatLng());
+                    double delta = SphericalUtil.computeDistanceBetween(userLocation, washroom.getLatLng());
                     if (delta < 1500) {
-                        mMap.addMarker(new MarkerOptions().position(washroom.getLatLng()).title(washroom.getName())
+                         Marker marker = mMap.addMarker(new MarkerOptions().position(washroom.getLatLng()).title(washroom.getName())
                                 .snippet("Name: " + washroom.getName() + "\n" + "Address: " + washroom.getAddress() + "\n"
                                         + "Type: " + washroom.getType() + "\n" + "Location: " + washroom.getLocation() + "\n"
                                         + "Summer hours: " + washroom.getSummerHours() + "\n" + "Winter hours: " + washroom.getWinterHours() + "\n"
                                         + "Wheelchair Access: " + washroom.getWheelchairAccess() + "\n" +
                                         "Note: " + washroom.getNote() + "\n" + "Maintainer: " + washroom.getMaintainer()));
+                        marker.setTag(washroom);
+                        markerList.add(marker);
+
                         mMap.setInfoWindowAdapter(new GoogleMap.InfoWindowAdapter() {
                             @Override
                             public View getInfoWindow(Marker arg0) {
@@ -141,6 +146,12 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
                                 return info;
                             }
                         });
+                    }
+                }
+
+                for (Marker m: markerList) {
+                    if(m.getTag() == washroomManager.findNearestTo(userLocation)) {
+                        m.setIcon(BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_ORANGE));
                     }
                 }
             }
@@ -171,16 +182,20 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
                 Location lastKnownLocation = locationManager.getLastKnownLocation(LocationManager.GPS_PROVIDER);
                 LatLng userLocation = new LatLng(lastKnownLocation.getLatitude(), lastKnownLocation.getLongitude());
                 mMap.clear();
+                ArrayList<Marker> markerList = new ArrayList<>();
 
                 for (Washroom washroom : washroomList) {
                     Double delta = SphericalUtil.computeDistanceBetween(userLocation, washroom.getLatLng());
                     if (delta < 1500) {
-                        mMap.addMarker(new MarkerOptions().position(washroom.getLatLng()).title(washroom.getName())
+                        Marker marker = mMap.addMarker(new MarkerOptions().position(washroom.getLatLng()).title(washroom.getName())
                                 .snippet("Name: " + washroom.getName() + "\n" + "Address: " + washroom.getAddress() + "\n"
                                         + "Type: " + washroom.getType() + "\n" + "Location: " + washroom.getLocation() + "\n"
                                         + "Summer hours: " + washroom.getSummerHours() + "\n" + "Winter hours: " + washroom.getWinterHours() + "\n"
                                         + "Wheelchair Access: " + washroom.getWheelchairAccess() + "\n" +
                                         "Note: " + washroom.getNote() + "\n" + "Maintainer: " + washroom.getMaintainer()));
+                        marker.setTag(washroom);
+                        markerList.add(marker);
+
                         mMap.setInfoWindowAdapter(new GoogleMap.InfoWindowAdapter() {
                             @Override
                             public View getInfoWindow(Marker arg0) {
@@ -207,24 +222,17 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
                         });
                     }
                 }
+
+                for (Marker m: markerList) {
+                    if(m.getTag() == washroomManager.findNearestTo(userLocation)) {
+                        m.setIcon(BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_ORANGE));
+                    }
+                }
+
                 mMap.moveCamera(CameraUpdateFactory.newLatLng(userLocation));
             }
         }
         mMap.setMyLocationEnabled(true);
-        uiSettings.setZoomControlsEnabled(true);
         mMap.animateCamera(CameraUpdateFactory.zoomTo(13));
-    }
-
-    /*
-     * from http://stackoverflow.com/questions/18053156/set-image-from-drawable-as-marker-in-google-map-version-2
-     */
-
-    private BitmapDescriptor getMarkerIconFromDrawable(Drawable drawable) {
-        Canvas canvas = new Canvas();
-        Bitmap bitmap = Bitmap.createBitmap(drawable.getIntrinsicWidth(), drawable.getIntrinsicHeight(), Bitmap.Config.ARGB_8888);
-        canvas.setBitmap(bitmap);
-        drawable.setBounds(0, 0, drawable.getIntrinsicWidth(), drawable.getIntrinsicHeight());
-        drawable.draw(canvas);
-        return BitmapDescriptorFactory.fromBitmap(bitmap);
     }
 }
