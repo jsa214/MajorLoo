@@ -1,5 +1,6 @@
 package com.sfuapichallenge.droptableteam.majorloo;
 
+
 import android.*;
 import android.content.Context;
 import android.content.pm.PackageManager;
@@ -29,7 +30,7 @@ import com.google.android.gms.maps.model.MarkerOptions;
 
 import java.io.InputStream;
 import java.util.ArrayList;
-import java.util.List;
+import com.google.maps.android.SphericalUtil;
 
 public class MapsActivity extends FragmentActivity implements OnMapReadyCallback {
 
@@ -102,7 +103,11 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
                 mMap.moveCamera(CameraUpdateFactory.newLatLng(userLocation));
                 for(Washroom washroom: washroomList) {
 
-                    mMap.addMarker(new MarkerOptions().position(washroom.getLatLng()).title(washroom.getName()));
+                    Double delta = SphericalUtil.computeDistanceBetween(userLocation, washroom.getLatLng());
+                    if(delta < 1000){
+                        mMap.addMarker(new MarkerOptions().position(washroom.getLatLng()).title(washroom.getName()));
+
+                    }
                 }
 
 
