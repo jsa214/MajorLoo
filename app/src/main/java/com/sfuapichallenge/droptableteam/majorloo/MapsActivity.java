@@ -2,6 +2,7 @@ package com.sfuapichallenge.droptableteam.majorloo;
 
 
 import android.content.Context;
+import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
 import android.graphics.Bitmap;
 import android.graphics.Canvas;
@@ -11,6 +12,7 @@ import android.graphics.drawable.Drawable;
 import android.location.Location;
 import android.location.LocationListener;
 import android.location.LocationManager;
+import android.media.Rating;
 import android.os.Build;
 import android.support.annotation.NonNull;
 import android.support.v4.app.ActivityCompat;
@@ -18,23 +20,32 @@ import android.support.v4.app.FragmentActivity;
 import android.os.Bundle;
 import android.support.v4.content.ContextCompat;
 import android.support.v4.content.res.ResourcesCompat;
+import android.util.Log;
 import android.view.Gravity;
 import android.view.View;
+import android.widget.Button;
 import android.widget.LinearLayout;
+import android.widget.RatingBar;
 import android.widget.TextView;
+import android.widget.Toast;
 
 import com.google.android.gms.maps.CameraUpdateFactory;
 import com.google.android.gms.maps.GoogleMap;
 import com.google.android.gms.maps.OnMapReadyCallback;
 import com.google.android.gms.maps.SupportMapFragment;
+import com.google.android.gms.maps.UiSettings;
 import com.google.android.gms.maps.model.BitmapDescriptor;
 import com.google.android.gms.maps.model.BitmapDescriptorFactory;
 import com.google.android.gms.maps.model.LatLng;
 import com.google.android.gms.maps.model.Marker;
 import com.google.android.gms.maps.model.MarkerOptions;
 
+import com.google.gson.Gson;
 import java.io.InputStream;
+import java.lang.reflect.Type;
 import java.util.ArrayList;
+
+import com.google.gson.reflect.TypeToken;
 import com.google.maps.android.SphericalUtil;
 
 public class MapsActivity extends FragmentActivity implements OnMapReadyCallback {
@@ -42,8 +53,12 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
     private GoogleMap mMap;
     private ArrayList<String[]> CSVwashroomList;
     private ArrayList<Washroom> washroomList;
+    private WashroomManager washroomManager;
     private LocationManager locationManager;
     private LocationListener locationListener;
+    private static RatingBar ratingBar;
+    private Button rateButton;
+    SharedPreferences  mPrefs;
 
     //location permission
     public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions, @NonNull int[] grantResults) {
@@ -66,22 +81,42 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
                 .findFragmentById(R.id.map);
         mapFragment.getMapAsync(this);
 
+        mPrefs = getPreferences(MODE_PRIVATE);
+        Gson gson = new Gson();
+        String json = mPrefs.getString("Washrooms", "");
+        if (!json.isEmpty()) {
+            Type type = new TypeToken<ArrayList<Washroom>>(){}.getType();
+            washroomList = gson.fromJson(json, type);
+        }else{
+            washroomList = new ArrayList<Washroom>();
+        }
+
         CSVwashroomList = new ArrayList<String[]>();
-        washroomList = new ArrayList<Washroom>();
+
+        washroomManager = washroomManager.getInstance();
 
         InputStream inputStream = getResources().openRawResource(R.raw.vancouver_public_washrooms);
         CSVParser csvParser = new CSVParser(inputStream);
         CSVwashroomList = csvParser.read();
-
         for(String[] stringList: CSVwashroomList) {
             LatLng newLatLng = new LatLng(Double.parseDouble(stringList[8]), Double.parseDouble(stringList[9]));
             Washroom washroom = new Washroom(stringList[0],stringList[1], stringList[2], stringList[3],
                     stringList[4], stringList[5], stringList[6], stringList[7], stringList[10],
-                    newLatLng);
+                    newLatLng, 0);
 
             washroomList.add(washroom);
+            washroomManager.addWashroom(washroom);
         }
+        rateButton = (Button) findViewById(R.id.rateButton);
+        ratingBar = (RatingBar) findViewById(R.id.ratingBar);
+        ratingBar.setVisibility(View.INVISIBLE);
+        rateButton.setVisibility(View.INVISIBLE);
+
+
+
     }
+
+
 
 
     /**
@@ -97,6 +132,15 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
     public void onMapReady(GoogleMap googleMap) {
         mMap = googleMap;
 
+        googleMap.setOnMapClickListener(new GoogleMap.OnMapClickListener() {
+
+            @Override
+            public void onMapClick(LatLng arg0) {
+                ratingBar.setVisibility(View.INVISIBLE);
+                rateButton.setVisibility(View.INVISIBLE);
+            }
+        });
+
         // when location changes
         locationManager = (LocationManager) this.getSystemService(Context.LOCATION_SERVICE);
         locationListener = new LocationListener() {
@@ -104,21 +148,23 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
             public void onLocationChanged(Location location) {
                 LatLng userLocation = new LatLng(location.getLatitude(), location.getLongitude());
                 mMap.clear();
-                Drawable currentLocationDrawable = ResourcesCompat.getDrawable(getResources(), R.drawable.current_location_icon, null);
-                BitmapDescriptor currentMarkerIcon = getMarkerIconFromDrawable(currentLocationDrawable);
+                ArrayList<Marker> markerList = new ArrayList<>();
 
-                mMap.addMarker(new MarkerOptions().position(userLocation).title("Your Location")
-                        .icon(currentMarkerIcon));
 
-                for (Washroom washroom : washroomList) {
+
+                for (final Washroom washroom : washroomList) {
                     Double delta = SphericalUtil.computeDistanceBetween(userLocation, washroom.getLatLng());
+
                     if (delta < 1500) {
-                        mMap.addMarker(new MarkerOptions().position(washroom.getLatLng()).title(washroom.getName())
+                         Marker marker = mMap.addMarker(new MarkerOptions().position(washroom.getLatLng()).title(washroom.getName())
                                 .snippet("Name: " + washroom.getName() + "\n" + "Address: " + washroom.getAddress() + "\n"
                                         + "Type: " + washroom.getType() + "\n" + "Location: " + washroom.getLocation() + "\n"
                                         + "Summer hours: " + washroom.getSummerHours() + "\n" + "Winter hours: " + washroom.getWinterHours() + "\n"
                                         + "Wheelchair Access: " + washroom.getWheelchairAccess() + "\n" +
                                         "Note: " + washroom.getNote() + "\n" + "Maintainer: " + washroom.getMaintainer()));
+                        marker.setTag(washroom);
+                        markerList.add(marker);
+
                         mMap.setInfoWindowAdapter(new GoogleMap.InfoWindowAdapter() {
                             @Override
                             public View getInfoWindow(Marker arg0) {
@@ -127,6 +173,8 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
 
                             @Override
                             public View getInfoContents(Marker marker) {
+                                ratingBar.setVisibility(View.VISIBLE);
+                                rateButton.setVisibility(View.VISIBLE);
                                 Context context = getApplicationContext();
                                 LinearLayout info = new LinearLayout(context);
                                 info.setOrientation(LinearLayout.VERTICAL);
@@ -140,9 +188,43 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
                                 snippet.setText(marker.getSnippet());
                                 info.addView(title);
                                 info.addView(snippet);
+
+                                final Washroom w = findWashroomByName(marker.getTitle());
+                                //Toast.makeText(MapsActivity.this,marker.getTitle() + ": " +  Float.toString(w.getNumOfStars()), Toast.LENGTH_SHORT).show();
+
+                                ratingBar.setRating(w.getNumOfStars());
+
+
+//                                ratingBar.setOnRatingBarChangeListener(
+//                                        new RatingBar.OnRatingBarChangeListener() {
+//                                            @Override
+//                                            public void onRatingChanged(RatingBar ratingBar, float v, boolean b) {
+//
+//                                            }
+//                                        }
+//                                );
+                                rateButton.setOnClickListener(new View.OnClickListener() {
+                                    @Override
+                                    public void onClick(View view) {
+                                        w.setNumOfStars(ratingBar.getRating());
+                                        SharedPreferences.Editor prefsEditor = mPrefs.edit();
+                                        Gson gson = new Gson();
+                                        String json = gson.toJson(washroomList);
+                                        prefsEditor.putString("Washrooms", json);
+                                        prefsEditor.commit();
+                                        //Toast.makeText(MapsActivity.this, w.getName() + ": " + Float.toString(ratingBar.getRating()), Toast.LENGTH_SHORT).show();
+
+                                    }
+                                });
                                 return info;
                             }
                         });
+                    }
+                }
+
+                for (Marker m: markerList) {
+                    if(m.getTag() == washroomManager.findNearestTo(userLocation)) {
+                        m.setIcon(BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_ORANGE));
                     }
                 }
             }
@@ -173,22 +255,21 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
                 Location lastKnownLocation = locationManager.getLastKnownLocation(LocationManager.GPS_PROVIDER);
                 LatLng userLocation = new LatLng(lastKnownLocation.getLatitude(), lastKnownLocation.getLongitude());
                 mMap.clear();
+                ArrayList<Marker> markerList = new ArrayList<>();
 
-                Drawable currentLocationDrawable = ResourcesCompat.getDrawable(getResources(), R.drawable.current_location_icon, null);
-                BitmapDescriptor currentMarkerIcon = getMarkerIconFromDrawable(currentLocationDrawable);
 
-                mMap.addMarker(new MarkerOptions().position(userLocation).title("Your Location")
-                .icon(currentMarkerIcon));
-
-                for (Washroom washroom : washroomList) {
+                for (final Washroom washroom : washroomList) {
                     Double delta = SphericalUtil.computeDistanceBetween(userLocation, washroom.getLatLng());
                     if (delta < 1500) {
-                        mMap.addMarker(new MarkerOptions().position(washroom.getLatLng()).title(washroom.getName())
+                        Marker marker = mMap.addMarker(new MarkerOptions().position(washroom.getLatLng()).title(washroom.getName())
                                 .snippet("Name: " + washroom.getName() + "\n" + "Address: " + washroom.getAddress() + "\n"
                                         + "Type: " + washroom.getType() + "\n" + "Location: " + washroom.getLocation() + "\n"
                                         + "Summer hours: " + washroom.getSummerHours() + "\n" + "Winter hours: " + washroom.getWinterHours() + "\n"
                                         + "Wheelchair Access: " + washroom.getWheelchairAccess() + "\n" +
                                         "Note: " + washroom.getNote() + "\n" + "Maintainer: " + washroom.getMaintainer()));
+                        marker.setTag(washroom);
+                        markerList.add(marker);
+
                         mMap.setInfoWindowAdapter(new GoogleMap.InfoWindowAdapter() {
                             @Override
                             public View getInfoWindow(Marker arg0) {
@@ -197,6 +278,8 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
 
                             @Override
                             public View getInfoContents(Marker marker) {
+                                ratingBar.setVisibility(View.VISIBLE);
+                                rateButton.setVisibility(View.VISIBLE);
                                 Context context = getApplicationContext();
                                 LinearLayout info = new LinearLayout(context);
                                 info.setOrientation(LinearLayout.VERTICAL);
@@ -210,16 +293,50 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
                                 snippet.setText(marker.getSnippet());
                                 info.addView(title);
                                 info.addView(snippet);
+                                final Washroom w = findWashroomByName(marker.getTitle());
+                                //Toast.makeText(MapsActivity.this, marker.getTitle() + ": " +  Float.toString(w.getNumOfStars()), Toast.LENGTH_SHORT).show();
+
+                                ratingBar.setRating(w.getNumOfStars());
+//                                ratingBar.setOnRatingBarChangeListener(
+//                                        new RatingBar.OnRatingBarChangeListener() {
+//                                            @Override
+//                                            public void onRatingChanged(RatingBar ratingBar, float v, boolean b) {
+//
+//                                            }
+//                                        }
+//                                );
+                                rateButton.setOnClickListener(new View.OnClickListener() {
+                                    @Override
+                                    public void onClick(View view) {
+                                        w.setNumOfStars(ratingBar.getRating());
+                                        SharedPreferences.Editor prefsEditor = mPrefs.edit();
+                                        Gson gson = new Gson();
+                                        String json = gson.toJson(washroomList);
+                                        prefsEditor.putString("Washrooms", json);
+                                        prefsEditor.commit();
+
+                                        //Toast.makeText(MapsActivity.this,w.getName() + ": " +  Float.toString(ratingBar.getRating()), Toast.LENGTH_SHORT).show();
+
+                                    }
+                                });
                                 return info;
                             }
                         });
                     }
                 }
+
+                for (Marker m: markerList) {
+                    if(m.getTag() == washroomManager.findNearestTo(userLocation)) {
+                        m.setIcon(BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_ORANGE));
+                    }
+                }
+
                 mMap.moveCamera(CameraUpdateFactory.newLatLng(userLocation));
             }
         }
 
-        mMap.animateCamera(CameraUpdateFactory.zoomTo(12));
+        mMap.setMyLocationEnabled(true);
+        mMap.animateCamera(CameraUpdateFactory.zoomTo(13));
     }
 
     /*
@@ -234,4 +351,17 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
         drawable.draw(canvas);
         return BitmapDescriptorFactory.fromBitmap(bitmap);
     }
+
+    public Washroom findWashroomByName (String name){
+        for(Washroom w : washroomList) {
+            if(w.getName().equals(name)) {
+                return w;
+            }
+        }
+        return null;
+    }
+
+
+
+
 }

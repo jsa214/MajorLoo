@@ -27,11 +27,11 @@
         -->
         <meta-data
             android:name="com.google.android.geo.API_KEY"
-            android:value="AIzaSyB7JMQ8MlWvRwxudNhv7YSpUs0F7KkcSeI" />
+            android:value="AIzaSyA3WEI4d0peD_j2HhG12CdEAQcxnXeRNPc" />
 
         <activity
             android:name=".MapsActivity"
-            android:label="@string/title_activity_maps">
+            android:label="MajorLoo">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
 
