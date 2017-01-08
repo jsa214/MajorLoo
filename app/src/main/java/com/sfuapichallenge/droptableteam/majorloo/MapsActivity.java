@@ -112,7 +112,7 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
 
                 for (Washroom washroom : washroomList) {
                     Double delta = SphericalUtil.computeDistanceBetween(userLocation, washroom.getLatLng());
-                    if (delta < 1000) {
+                    if (delta < 1500) {
                         mMap.addMarker(new MarkerOptions().position(washroom.getLatLng()).title(washroom.getName())
                                 .snippet("Name: " + washroom.getName() + "\n" + "Address: " + washroom.getAddress() + "\n"
                                         + "Type: " + washroom.getType() + "\n" + "Location: " + washroom.getLocation() + "\n"
@@ -180,47 +180,45 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
                 mMap.addMarker(new MarkerOptions().position(userLocation).title("Your Location")
                 .icon(currentMarkerIcon));
 
+                for (Washroom washroom : washroomList) {
+                    Double delta = SphericalUtil.computeDistanceBetween(userLocation, washroom.getLatLng());
+                    if (delta < 1500) {
+                        mMap.addMarker(new MarkerOptions().position(washroom.getLatLng()).title(washroom.getName())
+                                .snippet("Name: " + washroom.getName() + "\n" + "Address: " + washroom.getAddress() + "\n"
+                                        + "Type: " + washroom.getType() + "\n" + "Location: " + washroom.getLocation() + "\n"
+                                        + "Summer hours: " + washroom.getSummerHours() + "\n" + "Winter hours: " + washroom.getWinterHours() + "\n"
+                                        + "Wheelchair Access: " + washroom.getWheelchairAccess() + "\n" +
+                                        "Note: " + washroom.getNote() + "\n" + "Maintainer: " + washroom.getMaintainer()));
+                        mMap.setInfoWindowAdapter(new GoogleMap.InfoWindowAdapter() {
+                            @Override
+                            public View getInfoWindow(Marker arg0) {
+                                return null;
+                            }
+
+                            @Override
+                            public View getInfoContents(Marker marker) {
+                                Context context = getApplicationContext();
+                                LinearLayout info = new LinearLayout(context);
+                                info.setOrientation(LinearLayout.VERTICAL);
+                                TextView title = new TextView(context);
+                                title.setTextColor(Color.BLACK);
+                                title.setGravity(Gravity.CENTER);
+                                title.setTypeface(null, Typeface.BOLD);
+                                title.setText(marker.getTitle());
+                                TextView snippet = new TextView(context);
+                                snippet.setTextColor(Color.GRAY);
+                                snippet.setText(marker.getSnippet());
+                                info.addView(title);
+                                info.addView(snippet);
+                                return info;
+                            }
+                        });
+                    }
+                }
                 mMap.moveCamera(CameraUpdateFactory.newLatLng(userLocation));
             }
         }
 
-        // when the app starts, move camera to default position (vancouver) and add all markers
-//        for(Washroom washroom: washroomList) {
-//                mMap.addMarker(new MarkerOptions().position(washroom.getLatLng()).title(washroom.getName())
-//                        .snippet("Name: " + washroom.getName() + "\n" + "Address: " + washroom.getAddress() + "\n"
-//                                + "Type: " + washroom.getType() + "\n" + "Location: " + washroom.getLocation() + "\n"
-//                                + "Summer hours: " + washroom.getSummerHours() + "\n" + "Winter hours: " + washroom.getWinterHours()+ "\n"
-//                                + "Wheelchair Access: " + washroom.getWheelchairAccess() + "\n" +
-//                                "Note: " + washroom.getNote() + "\n" + "Maintainer: " + washroom.getMaintainer()));
-//                mMap.setInfoWindowAdapter(new GoogleMap.InfoWindowAdapter() {
-//                    @Override
-//                    public View getInfoWindow(Marker arg0) {
-//                        return null;
-//                    }
-//
-//                    @Override
-//                    public View getInfoContents(Marker marker) {
-//                        Context context = getApplicationContext();
-//                        LinearLayout info = new LinearLayout(context);
-//                        info.setOrientation(LinearLayout.VERTICAL);
-//                        TextView title = new TextView(context);
-//                        title.setTextColor(Color.BLACK);
-//                        title.setGravity(Gravity.CENTER);
-//                        title.setTypeface(null, Typeface.BOLD);
-//                        title.setText(marker.getTitle());
-//                        TextView snippet = new TextView(context);
-//                        snippet.setTextColor(Color.GRAY);
-//                        snippet.setText(marker.getSnippet());
-//                        info.addView(title);
-//                        info.addView(snippet);
-//                        return info;
-//                    }
-//                });
-//        }
-
-        // move the camera to Vancouver
-        LatLng vancouver = new LatLng(49.257, -123.193);
-        mMap.moveCamera(CameraUpdateFactory.newLatLng(vancouver));
         mMap.animateCamera(CameraUpdateFactory.zoomTo(12));
     }
 
