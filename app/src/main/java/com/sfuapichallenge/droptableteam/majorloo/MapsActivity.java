@@ -1,13 +1,21 @@
 package com.sfuapichallenge.droptableteam.majorloo;
 
+import android.content.Context;
+import android.graphics.Color;
+import android.graphics.Typeface;
 import android.support.v4.app.FragmentActivity;
 import android.os.Bundle;
+import android.view.Gravity;
+import android.view.View;
+import android.widget.LinearLayout;
+import android.widget.TextView;
 
 import com.google.android.gms.maps.CameraUpdateFactory;
 import com.google.android.gms.maps.GoogleMap;
 import com.google.android.gms.maps.OnMapReadyCallback;
 import com.google.android.gms.maps.SupportMapFragment;
 import com.google.android.gms.maps.model.LatLng;
+import com.google.android.gms.maps.model.Marker;
 import com.google.android.gms.maps.model.MarkerOptions;
 
 import java.io.InputStream;
@@ -63,7 +71,43 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
         // move the camera to Vancouver
         LatLng vancouver = new LatLng(49.257, -123.193);
         for(Washroom washroom: washroomList) {
-            mMap.addMarker(new MarkerOptions().position(washroom.getLatLng()).title(washroom.getName()));
+            mMap.addMarker(new MarkerOptions().position(washroom.getLatLng()).title(washroom.getName())
+            .snippet("Name: " + washroom.getName() + "\n" + "Address: " + washroom.getAddress() + "\n"
+                     + "Type: " + washroom.getType() + "\n" + "Location: " + washroom.getLocation() + "\n"
+                    + "Summer hours: " + washroom.getSummerHours() + "\n" + "Winter hours: " + washroom.getWinterHours()+ "\n"
+            + "Wheelchair Access: " + washroom.getWheelchairAccess() + "\n" +
+                    "Note: " + washroom.getNote() + "\n" + "Maintainer: " + washroom.getMaintainer()));
+            mMap.setInfoWindowAdapter(new GoogleMap.InfoWindowAdapter() {
+
+                @Override
+                public View getInfoWindow(Marker arg0) {
+                    return null;
+                }
+
+                @Override
+                public View getInfoContents(Marker marker) {
+
+                    Context context = getApplicationContext(); //or getActivity(), YourActivity.this, etc.
+
+                    LinearLayout info = new LinearLayout(context);
+                    info.setOrientation(LinearLayout.VERTICAL);
+
+                    TextView title = new TextView(context);
+                    title.setTextColor(Color.BLACK);
+                    title.setGravity(Gravity.CENTER);
+                    title.setTypeface(null, Typeface.BOLD);
+                    title.setText(marker.getTitle());
+
+                    TextView snippet = new TextView(context);
+                    snippet.setTextColor(Color.GRAY);
+                    snippet.setText(marker.getSnippet());
+
+                    info.addView(title);
+                    info.addView(snippet);
+
+                    return info;
+                }
+            });
         }
         mMap.moveCamera(CameraUpdateFactory.newLatLng(vancouver));
         mMap.animateCamera(CameraUpdateFactory.zoomTo(12));

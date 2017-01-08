@@ -54,8 +54,8 @@ public class Washroom {
         return wheelchairAccess;
     }
 
-    public void setNote(String note) {
-        this.note = note;
+    public String getNote() {
+        return note;
     }
 
     public String getMaintainer() {
