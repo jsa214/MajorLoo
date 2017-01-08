@@ -131,6 +131,7 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
     @Override
     public void onMapReady(GoogleMap googleMap) {
         mMap = googleMap;
+        final TextView nearestText = (TextView)findViewById(R.id.nearestTextView);
 
         googleMap.setOnMapClickListener(new GoogleMap.OnMapClickListener() {
 
@@ -225,6 +226,8 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
                         m.setIcon(BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_ORANGE));
                     }
                 }
+
+                nearestText.setText(" Nearest: " + washroomManager.findNearestTo(userLocation).getName());
             }
 
             @Override
@@ -294,14 +297,6 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
                                 //Toast.makeText(MapsActivity.this, marker.getTitle() + ": " +  Float.toString(w.getNumOfStars()), Toast.LENGTH_SHORT).show();
 
                                 ratingBar.setRating(w.getNumOfStars());
-//                                ratingBar.setOnRatingBarChangeListener(
-//                                        new RatingBar.OnRatingBarChangeListener() {
-//                                            @Override
-//                                            public void onRatingChanged(RatingBar ratingBar, float v, boolean b) {
-//
-//                                            }
-//                                        }
-//                                );
                                 rateButton.setOnClickListener(new View.OnClickListener() {
                                     @Override
                                     public void onClick(View view) {
@@ -327,6 +322,8 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
                         m.setIcon(BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_ORANGE));
                     }
                 }
+
+                nearestText.setText(" Nearest: " + washroomManager.findNearestTo(userLocation).getName());
 
                 mMap.moveCamera(CameraUpdateFactory.newLatLng(userLocation));
             }
