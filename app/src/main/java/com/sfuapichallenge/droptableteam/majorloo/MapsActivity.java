@@ -1,7 +1,6 @@
 package com.sfuapichallenge.droptableteam.majorloo;
 
 
-import android.*;
 import android.content.Context;
 import android.content.pm.PackageManager;
 import android.graphics.Color;
@@ -101,16 +100,12 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
                 mMap.addMarker(new MarkerOptions().position(userLocation).title("Your Location"));
                 mMap.moveCamera(CameraUpdateFactory.newLatLng(userLocation));
                 for(Washroom washroom: washroomList) {
-<<<<<<< Updated upstream
-
                     Double delta = SphericalUtil.computeDistanceBetween(userLocation, washroom.getLatLng());
                     if(delta < 1000){
                         mMap.addMarker(new MarkerOptions().position(washroom.getLatLng()).title(washroom.getName()));
 
                     }
-=======
                     mMap.addMarker(new MarkerOptions().position(washroom.getLatLng()).title(washroom.getName()));
->>>>>>> Stashed changes
                 }
             }
 
@@ -141,7 +136,7 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
                 LatLng userLocation = new LatLng(lastKnownLocation.getLatitude(), lastKnownLocation.getLongitude());
                 mMap.clear();
                 mMap.addMarker(new MarkerOptions().position(userLocation).title("Your Location")
-                        .icon(BitmapDescriptorFactory.fromResource(R.raw.currentLocation)));
+                        .icon(BitmapDescriptorFactory.fromResource(R.raw.current_location_icon)));
                 mMap.moveCamera(CameraUpdateFactory.newLatLng(userLocation));
             }
         }
