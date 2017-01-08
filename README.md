@@ -8,7 +8,7 @@ This app is part of SFU API Challenge 2017. We had to utilize Google Map API to 
 Simply run this code on Android Studio. You will have to have an actual Android device or AVD.
 
 ## TODO
-* Add more washroom data.
+* Add more washroom data. This app currently only has City of Vancouver's data.
 * Clean up code.
 
 ## Contributors
