@@ -3,8 +3,11 @@ package com.sfuapichallenge.droptableteam.majorloo;
 
 import android.content.Context;
 import android.content.pm.PackageManager;
+import android.graphics.Bitmap;
+import android.graphics.Canvas;
 import android.graphics.Color;
 import android.graphics.Typeface;
+import android.graphics.drawable.Drawable;
 import android.location.Location;
 import android.location.LocationListener;
 import android.location.LocationManager;
@@ -14,6 +17,7 @@ import android.support.v4.app.ActivityCompat;
 import android.support.v4.app.FragmentActivity;
 import android.os.Bundle;
 import android.support.v4.content.ContextCompat;
+import android.support.v4.content.res.ResourcesCompat;
 import android.view.Gravity;
 import android.view.View;
 import android.widget.LinearLayout;
@@ -23,6 +27,7 @@ import com.google.android.gms.maps.CameraUpdateFactory;
 import com.google.android.gms.maps.GoogleMap;
 import com.google.android.gms.maps.OnMapReadyCallback;
 import com.google.android.gms.maps.SupportMapFragment;
+import com.google.android.gms.maps.model.BitmapDescriptor;
 import com.google.android.gms.maps.model.BitmapDescriptorFactory;
 import com.google.android.gms.maps.model.LatLng;
 import com.google.android.gms.maps.model.Marker;
@@ -37,8 +42,8 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
     private GoogleMap mMap;
     private ArrayList<String[]> CSVwashroomList;
     private ArrayList<Washroom> washroomList;
-    LocationManager locationManager;
-    LocationListener locationListener;
+    private LocationManager locationManager;
+    private LocationListener locationListener;
 
     //location permission
     public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions, @NonNull int[] grantResults) {
@@ -102,10 +107,37 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
                 for(Washroom washroom: washroomList) {
                     Double delta = SphericalUtil.computeDistanceBetween(userLocation, washroom.getLatLng());
                     if(delta < 1000){
-                        mMap.addMarker(new MarkerOptions().position(washroom.getLatLng()).title(washroom.getName()));
+                        mMap.addMarker(new MarkerOptions().position(washroom.getLatLng()).title(washroom.getName())
+                                .snippet("Name: " + washroom.getName() + "\n" + "Address: " + washroom.getAddress() + "\n"
+                                        + "Type: " + washroom.getType() + "\n" + "Location: " + washroom.getLocation() + "\n"
+                                        + "Summer hours: " + washroom.getSummerHours() + "\n" + "Winter hours: " + washroom.getWinterHours()+ "\n"
+                                        + "Wheelchair Access: " + washroom.getWheelchairAccess() + "\n" +
+                                        "Note: " + washroom.getNote() + "\n" + "Maintainer: " + washroom.getMaintainer()));
+                        mMap.setInfoWindowAdapter(new GoogleMap.InfoWindowAdapter() {
+                            @Override
+                            public View getInfoWindow(Marker arg0) {
+                                return null;
+                            }
 
+                            @Override
+                            public View getInfoContents(Marker marker) {
+                                Context context = getApplicationContext();
+                                LinearLayout info = new LinearLayout(context);
+                                info.setOrientation(LinearLayout.VERTICAL);
+                                TextView title = new TextView(context);
+                                title.setTextColor(Color.BLACK);
+                                title.setGravity(Gravity.CENTER);
+                                title.setTypeface(null, Typeface.BOLD);
+                                title.setText(marker.getTitle());
+                                TextView snippet = new TextView(context);
+                                snippet.setTextColor(Color.GRAY);
+                                snippet.setText(marker.getSnippet());
+                                info.addView(title);
+                                info.addView(snippet);
+                                return info;
+                            }
+                        });
                     }
-                    mMap.addMarker(new MarkerOptions().position(washroom.getLatLng()).title(washroom.getName()));
                 }
             }
 
@@ -135,47 +167,33 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
                 Location lastKnownLocation = locationManager.getLastKnownLocation(LocationManager.GPS_PROVIDER);
                 LatLng userLocation = new LatLng(lastKnownLocation.getLatitude(), lastKnownLocation.getLongitude());
                 mMap.clear();
+
+                Drawable currentLocationDrawable = ResourcesCompat.getDrawable(getResources(), R.drawable.current_location_icon, null);
+                BitmapDescriptor currentMarkerIcon = getMarkerIconFromDrawable(currentLocationDrawable);
+
                 mMap.addMarker(new MarkerOptions().position(userLocation).title("Your Location")
-                        .icon(BitmapDescriptorFactory.fromResource(R.raw.current_location_icon)));
+                .icon(currentMarkerIcon));
+
                 mMap.moveCamera(CameraUpdateFactory.newLatLng(userLocation));
             }
         }
 
         // move the camera to Vancouver
         LatLng vancouver = new LatLng(49.257, -123.193);
-        for(Washroom washroom: washroomList) {
-            mMap.addMarker(new MarkerOptions().position(washroom.getLatLng()).title(washroom.getName())
-            .snippet("Name: " + washroom.getName() + "\n" + "Address: " + washroom.getAddress() + "\n"
-                     + "Type: " + washroom.getType() + "\n" + "Location: " + washroom.getLocation() + "\n"
-                    + "Summer hours: " + washroom.getSummerHours() + "\n" + "Winter hours: " + washroom.getWinterHours()+ "\n"
-            + "Wheelchair Access: " + washroom.getWheelchairAccess() + "\n" +
-                    "Note: " + washroom.getNote() + "\n" + "Maintainer: " + washroom.getMaintainer()));
-            mMap.setInfoWindowAdapter(new GoogleMap.InfoWindowAdapter() {
-                @Override
-                public View getInfoWindow(Marker arg0) {
-                    return null;
-                }
-
-                @Override
-                public View getInfoContents(Marker marker) {
-                    Context context = getApplicationContext(); //or getActivity(), YourActivity.this, etc.
-                    LinearLayout info = new LinearLayout(context);
-                    info.setOrientation(LinearLayout.VERTICAL);
-                    TextView title = new TextView(context);
-                    title.setTextColor(Color.BLACK);
-                    title.setGravity(Gravity.CENTER);
-                    title.setTypeface(null, Typeface.BOLD);
-                    title.setText(marker.getTitle());
-                    TextView snippet = new TextView(context);
-                    snippet.setTextColor(Color.GRAY);
-                    snippet.setText(marker.getSnippet());
-                    info.addView(title);
-                    info.addView(snippet);
-                    return info;
-                }
-            });
-        }
         mMap.moveCamera(CameraUpdateFactory.newLatLng(vancouver));
         mMap.animateCamera(CameraUpdateFactory.zoomTo(12));
+    }
+
+    /*
+     * from http://stackoverflow.com/questions/18053156/set-image-from-drawable-as-marker-in-google-map-version-2
+     */
+
+    private BitmapDescriptor getMarkerIconFromDrawable(Drawable drawable) {
+        Canvas canvas = new Canvas();
+        Bitmap bitmap = Bitmap.createBitmap(drawable.getIntrinsicWidth(), drawable.getIntrinsicHeight(), Bitmap.Config.ARGB_8888);
+        canvas.setBitmap(bitmap);
+        drawable.setBounds(0, 0, drawable.getIntrinsicWidth(), drawable.getIntrinsicHeight());
+        drawable.draw(canvas);
+        return BitmapDescriptorFactory.fromBitmap(bitmap);
     }
 }
