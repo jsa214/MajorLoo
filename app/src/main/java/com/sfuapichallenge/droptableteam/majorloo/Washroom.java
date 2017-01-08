@@ -10,10 +10,11 @@ public class Washroom {
     String name, address, type, location, summerHours, winterHours, wheelchairAccess;
     String note, maintainer;
     LatLng latLng;
+    float numOfStars;
 
     public Washroom(String name, String address, String type, String location, String summerHours,
                     String winterHours, String wheelchairAccess, String note, String maintainer,
-                    LatLng latLng) {
+                    LatLng latLng, float numOfStars) {
         this.name = name;
         this.address = address;
         this.type = type;
@@ -24,6 +25,7 @@ public class Washroom {
         this.note = note;
         this.maintainer = maintainer;
         this.latLng = latLng;
+        this.numOfStars = numOfStars;
     }
 
     public String getName() {
@@ -65,4 +67,8 @@ public class Washroom {
     public LatLng getLatLng() {
         return latLng;
     }
+
+    public float getNumOfStars() { return numOfStars; }
+
+    public void setNumOfStars(float numOfStars) { this.numOfStars = numOfStars; }
 }
