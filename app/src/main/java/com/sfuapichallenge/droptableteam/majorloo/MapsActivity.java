@@ -27,6 +27,7 @@ import com.google.android.gms.maps.CameraUpdateFactory;
 import com.google.android.gms.maps.GoogleMap;
 import com.google.android.gms.maps.OnMapReadyCallback;
 import com.google.android.gms.maps.SupportMapFragment;
+import com.google.android.gms.maps.UiSettings;
 import com.google.android.gms.maps.model.BitmapDescriptor;
 import com.google.android.gms.maps.model.BitmapDescriptorFactory;
 import com.google.android.gms.maps.model.LatLng;
@@ -40,6 +41,7 @@ import com.google.maps.android.SphericalUtil;
 public class MapsActivity extends FragmentActivity implements OnMapReadyCallback {
 
     private GoogleMap mMap;
+    private UiSettings uiSettings;
     private ArrayList<String[]> CSVwashroomList;
     private ArrayList<Washroom> washroomList;
     private LocationManager locationManager;
@@ -96,6 +98,7 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
     @Override
     public void onMapReady(GoogleMap googleMap) {
         mMap = googleMap;
+        uiSettings = googleMap.getUiSettings();
 
         // when location changes
         locationManager = (LocationManager) this.getSystemService(Context.LOCATION_SERVICE);
@@ -104,11 +107,6 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
             public void onLocationChanged(Location location) {
                 LatLng userLocation = new LatLng(location.getLatitude(), location.getLongitude());
                 mMap.clear();
-                Drawable currentLocationDrawable = ResourcesCompat.getDrawable(getResources(), R.drawable.current_location_icon, null);
-                BitmapDescriptor currentMarkerIcon = getMarkerIconFromDrawable(currentLocationDrawable);
-
-                mMap.addMarker(new MarkerOptions().position(userLocation).title("Your Location")
-                        .icon(currentMarkerIcon));
 
                 for (Washroom washroom : washroomList) {
                     Double delta = SphericalUtil.computeDistanceBetween(userLocation, washroom.getLatLng());
@@ -174,12 +172,6 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
                 LatLng userLocation = new LatLng(lastKnownLocation.getLatitude(), lastKnownLocation.getLongitude());
                 mMap.clear();
 
-                Drawable currentLocationDrawable = ResourcesCompat.getDrawable(getResources(), R.drawable.current_location_icon, null);
-                BitmapDescriptor currentMarkerIcon = getMarkerIconFromDrawable(currentLocationDrawable);
-
-                mMap.addMarker(new MarkerOptions().position(userLocation).title("Your Location")
-                .icon(currentMarkerIcon));
-
                 for (Washroom washroom : washroomList) {
                     Double delta = SphericalUtil.computeDistanceBetween(userLocation, washroom.getLatLng());
                     if (delta < 1500) {
@@ -218,8 +210,9 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
                 mMap.moveCamera(CameraUpdateFactory.newLatLng(userLocation));
             }
         }
-
-        mMap.animateCamera(CameraUpdateFactory.zoomTo(12));
+        mMap.setMyLocationEnabled(true);
+        uiSettings.setZoomControlsEnabled(true);
+        mMap.animateCamera(CameraUpdateFactory.zoomTo(13));
     }
 
     /*
