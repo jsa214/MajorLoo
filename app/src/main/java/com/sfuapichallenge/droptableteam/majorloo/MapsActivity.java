@@ -10,9 +10,15 @@ import com.google.android.gms.maps.SupportMapFragment;
 import com.google.android.gms.maps.model.LatLng;
 import com.google.android.gms.maps.model.MarkerOptions;
 
+import java.io.InputStream;
+import java.util.ArrayList;
+import java.util.List;
+
 public class MapsActivity extends FragmentActivity implements OnMapReadyCallback {
 
     private GoogleMap mMap;
+    private ArrayList<String[]> CSVwashroomList;
+    private ArrayList<Washroom> washroomList;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -22,6 +28,22 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
         SupportMapFragment mapFragment = (SupportMapFragment) getSupportFragmentManager()
                 .findFragmentById(R.id.map);
         mapFragment.getMapAsync(this);
+
+        CSVwashroomList = new ArrayList<String[]>();
+        washroomList = new ArrayList<Washroom>();
+
+        InputStream inputStream = getResources().openRawResource(R.raw.vancouver_public_washrooms);
+        CSVParser csvParser = new CSVParser(inputStream);
+        CSVwashroomList = csvParser.read();
+
+        for(String[] stringList: CSVwashroomList) {
+            LatLng newLatLng = new LatLng(Double.parseDouble(stringList[8]), Double.parseDouble(stringList[9]));
+            Washroom washroom = new Washroom(stringList[0],stringList[1], stringList[2], stringList[3],
+                    stringList[4], stringList[5], stringList[6], stringList[7], stringList[10],
+                    newLatLng);
+
+            washroomList.add(washroom);
+        }
     }
 
 
@@ -38,9 +60,12 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
     public void onMapReady(GoogleMap googleMap) {
         mMap = googleMap;
 
-        // Add a marker in Sydney and move the camera
-        LatLng sydney = new LatLng(-34, 151);
-        mMap.addMarker(new MarkerOptions().position(sydney).title("Marker in Sydney"));
-        mMap.moveCamera(CameraUpdateFactory.newLatLng(sydney));
+        // move the camera to Vancouver
+        LatLng vancouver = new LatLng(49.257, -123.193);
+        for(Washroom washroom: washroomList) {
+            mMap.addMarker(new MarkerOptions().position(washroom.getLatLng()).title(washroom.getName()));
+        }
+        mMap.moveCamera(CameraUpdateFactory.newLatLng(vancouver));
+        mMap.animateCamera(CameraUpdateFactory.zoomTo(12));
     }
 }
