@@ -1,9 +1,7 @@
-
 <RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
 android:layout_width="match_parent"
 android:layout_height="match_parent"
 >
-
 
     <fragment xmlns:android="http://schemas.android.com/apk/res/android"
         xmlns:map="http://schemas.android.com/apk/res-auto"
@@ -13,25 +11,35 @@ android:layout_height="match_parent"
         android:layout_width="match_parent"
         android:layout_height="match_parent" />
 
-    <Button
-        android:text="RATE!"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:id="@+id/rateButton"
-        android:elevation="0dp"
-        android:layout_alignParentBottom="true"
-        android:layout_alignParentStart="true"
-        android:layout_marginStart="8dp"
-        android:layout_marginBottom="7dp" />
-
     <RatingBar
         android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
+        android:layout_height="50dp"
         android:id="@+id/ratingBar"
         android:numStars="5"
         android:rating="0"
-        android:layout_above="@+id/rateButton"
+        android:layout_alignParentTop="true"
         android:layout_alignParentStart="true" />
 
-</RelativeLayout>
+    <Button
+        android:text="RATE!"
+        android:layout_height="wrap_content"
+        android:id="@+id/rateButton"
+        android:elevation="0dp"
+        android:layout_alignBottom="@+id/ratingBar"
+        android:layout_toEndOf="@+id/ratingBar"
+        android:layout_width="70dp" />
 
+    <TextView
+        android:text="Nearest:"
+        android:layout_width="wrap_content"
+        android:layout_alignParentBottom="true"
+        android:layout_alignParentStart="true"
+        android:id="@+id/nearestTextView"
+        android:layout_alignParentEnd="true"
+        android:gravity="left|center_vertical"
+        android:textColor="#FFFFFF"
+        android:background="#85000000"
+        android:textSize="25dp"
+        android:layout_height="wrap_content" />
+
+</RelativeLayout>

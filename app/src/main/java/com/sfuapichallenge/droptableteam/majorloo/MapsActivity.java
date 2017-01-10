@@ -4,49 +4,39 @@ package com.sfuapichallenge.droptableteam.majorloo;
 import android.content.Context;
 import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
-import android.graphics.Bitmap;
-import android.graphics.Canvas;
 import android.graphics.Color;
 import android.graphics.Typeface;
-import android.graphics.drawable.Drawable;
 import android.location.Location;
 import android.location.LocationListener;
 import android.location.LocationManager;
-import android.media.Rating;
 import android.os.Build;
+import android.os.Bundle;
 import android.support.annotation.NonNull;
 import android.support.v4.app.ActivityCompat;
 import android.support.v4.app.FragmentActivity;
-import android.os.Bundle;
 import android.support.v4.content.ContextCompat;
-import android.support.v4.content.res.ResourcesCompat;
-import android.util.Log;
 import android.view.Gravity;
 import android.view.View;
 import android.widget.Button;
 import android.widget.LinearLayout;
 import android.widget.RatingBar;
 import android.widget.TextView;
-import android.widget.Toast;
 
 import com.google.android.gms.maps.CameraUpdateFactory;
 import com.google.android.gms.maps.GoogleMap;
 import com.google.android.gms.maps.OnMapReadyCallback;
 import com.google.android.gms.maps.SupportMapFragment;
-import com.google.android.gms.maps.UiSettings;
-import com.google.android.gms.maps.model.BitmapDescriptor;
 import com.google.android.gms.maps.model.BitmapDescriptorFactory;
 import com.google.android.gms.maps.model.LatLng;
 import com.google.android.gms.maps.model.Marker;
 import com.google.android.gms.maps.model.MarkerOptions;
-
 import com.google.gson.Gson;
+import com.google.gson.reflect.TypeToken;
+import com.google.maps.android.SphericalUtil;
+
 import java.io.InputStream;
 import java.lang.reflect.Type;
 import java.util.ArrayList;
-
-import com.google.gson.reflect.TypeToken;
-import com.google.maps.android.SphericalUtil;
 
 public class MapsActivity extends FragmentActivity implements OnMapReadyCallback {
 
@@ -58,14 +48,14 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
     private LocationListener locationListener;
     private static RatingBar ratingBar;
     private Button rateButton;
-    SharedPreferences  mPrefs;
+    SharedPreferences mPrefs;
 
     //location permission
     public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions, @NonNull int[] grantResults) {
         super.onRequestPermissionsResult(requestCode, permissions, grantResults);
 
-        if(grantResults.length > 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED){
-            if(ContextCompat.checkSelfPermission(this, android.Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED) {
+        if (grantResults.length > 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
+            if (ContextCompat.checkSelfPermission(this, android.Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED) {
 
                 locationManager.requestLocationUpdates(LocationManager.GPS_PROVIDER, 0, 0, locationListener);
             }
@@ -85,9 +75,10 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
         Gson gson = new Gson();
         String json = mPrefs.getString("Washrooms", "");
         if (!json.isEmpty()) {
-            Type type = new TypeToken<ArrayList<Washroom>>(){}.getType();
+            Type type = new TypeToken<ArrayList<Washroom>>() {
+            }.getType();
             washroomList = gson.fromJson(json, type);
-        }else{
+        } else {
             washroomList = new ArrayList<Washroom>();
         }
 
@@ -98,9 +89,9 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
         InputStream inputStream = getResources().openRawResource(R.raw.vancouver_public_washrooms);
         CSVParser csvParser = new CSVParser(inputStream);
         CSVwashroomList = csvParser.read();
-        for(String[] stringList: CSVwashroomList) {
+        for (String[] stringList : CSVwashroomList) {
             LatLng newLatLng = new LatLng(Double.parseDouble(stringList[8]), Double.parseDouble(stringList[9]));
-            Washroom washroom = new Washroom(stringList[0],stringList[1], stringList[2], stringList[3],
+            Washroom washroom = new Washroom(stringList[0], stringList[1], stringList[2], stringList[3],
                     stringList[4], stringList[5], stringList[6], stringList[7], stringList[10],
                     newLatLng, 0);
 
@@ -113,10 +104,7 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
         rateButton.setVisibility(View.INVISIBLE);
 
 
-
     }
-
-
 
 
     /**
@@ -131,6 +119,7 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
     @Override
     public void onMapReady(GoogleMap googleMap) {
         mMap = googleMap;
+        final TextView nearestText = (TextView) findViewById(R.id.nearestTextView);
 
         googleMap.setOnMapClickListener(new GoogleMap.OnMapClickListener() {
 
@@ -150,13 +139,11 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
                 mMap.clear();
                 ArrayList<Marker> markerList = new ArrayList<>();
 
-
-
                 for (final Washroom washroom : washroomList) {
                     Double delta = SphericalUtil.computeDistanceBetween(userLocation, washroom.getLatLng());
 
                     if (delta < 1500) {
-                         Marker marker = mMap.addMarker(new MarkerOptions().position(washroom.getLatLng()).title(washroom.getName())
+                        Marker marker = mMap.addMarker(new MarkerOptions().position(washroom.getLatLng()).title(washroom.getName())
                                 .snippet("Name: " + washroom.getName() + "\n" + "Address: " + washroom.getAddress() + "\n"
                                         + "Type: " + washroom.getType() + "\n" + "Location: " + washroom.getLocation() + "\n"
                                         + "Summer hours: " + washroom.getSummerHours() + "\n" + "Winter hours: " + washroom.getWinterHours() + "\n"
@@ -190,19 +177,9 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
                                 info.addView(snippet);
 
                                 final Washroom w = findWashroomByName(marker.getTitle());
-                                //Toast.makeText(MapsActivity.this,marker.getTitle() + ": " +  Float.toString(w.getNumOfStars()), Toast.LENGTH_SHORT).show();
 
                                 ratingBar.setRating(w.getNumOfStars());
 
-
-//                                ratingBar.setOnRatingBarChangeListener(
-//                                        new RatingBar.OnRatingBarChangeListener() {
-//                                            @Override
-//                                            public void onRatingChanged(RatingBar ratingBar, float v, boolean b) {
-//
-//                                            }
-//                                        }
-//                                );
                                 rateButton.setOnClickListener(new View.OnClickListener() {
                                     @Override
                                     public void onClick(View view) {
@@ -212,7 +189,6 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
                                         String json = gson.toJson(washroomList);
                                         prefsEditor.putString("Washrooms", json);
                                         prefsEditor.commit();
-                                        //Toast.makeText(MapsActivity.this, w.getName() + ": " + Float.toString(ratingBar.getRating()), Toast.LENGTH_SHORT).show();
 
                                     }
                                 });
@@ -222,11 +198,13 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
                     }
                 }
 
-                for (Marker m: markerList) {
-                    if(m.getTag() == washroomManager.findNearestTo(userLocation)) {
+                for (Marker m : markerList) {
+                    if (m.getTag() == washroomManager.findNearestTo(userLocation)) {
                         m.setIcon(BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_ORANGE));
                     }
                 }
+
+                nearestText.setText(" Nearest: " + washroomManager.findNearestTo(userLocation).getName());
             }
 
             @Override
@@ -256,7 +234,6 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
                 LatLng userLocation = new LatLng(lastKnownLocation.getLatitude(), lastKnownLocation.getLongitude());
                 mMap.clear();
                 ArrayList<Marker> markerList = new ArrayList<>();
-
 
                 for (final Washroom washroom : washroomList) {
                     Double delta = SphericalUtil.computeDistanceBetween(userLocation, washroom.getLatLng());
@@ -294,17 +271,8 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
                                 info.addView(title);
                                 info.addView(snippet);
                                 final Washroom w = findWashroomByName(marker.getTitle());
-                                //Toast.makeText(MapsActivity.this, marker.getTitle() + ": " +  Float.toString(w.getNumOfStars()), Toast.LENGTH_SHORT).show();
 
                                 ratingBar.setRating(w.getNumOfStars());
-//                                ratingBar.setOnRatingBarChangeListener(
-//                                        new RatingBar.OnRatingBarChangeListener() {
-//                                            @Override
-//                                            public void onRatingChanged(RatingBar ratingBar, float v, boolean b) {
-//
-//                                            }
-//                                        }
-//                                );
                                 rateButton.setOnClickListener(new View.OnClickListener() {
                                     @Override
                                     public void onClick(View view) {
@@ -314,9 +282,6 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
                                         String json = gson.toJson(washroomList);
                                         prefsEditor.putString("Washrooms", json);
                                         prefsEditor.commit();
-
-                                        //Toast.makeText(MapsActivity.this,w.getName() + ": " +  Float.toString(ratingBar.getRating()), Toast.LENGTH_SHORT).show();
-
                                     }
                                 });
                                 return info;
@@ -324,44 +289,28 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
                         });
                     }
                 }
-
-                for (Marker m: markerList) {
-                    if(m.getTag() == washroomManager.findNearestTo(userLocation)) {
+                for (Marker m : markerList) {
+                    if (m.getTag() == washroomManager.findNearestTo(userLocation)) {
                         m.setIcon(BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_ORANGE));
                     }
                 }
-
+                nearestText.setText(" Nearest: " + washroomManager.findNearestTo(userLocation).getName());
                 mMap.moveCamera(CameraUpdateFactory.newLatLng(userLocation));
             }
         }
-
         mMap.setMyLocationEnabled(true);
         mMap.animateCamera(CameraUpdateFactory.zoomTo(13));
     }
 
-    /*
-     * from http://stackoverflow.com/questions/18053156/set-image-from-drawable-as-marker-in-google-map-version-2
-     */
 
-    private BitmapDescriptor getMarkerIconFromDrawable(Drawable drawable) {
-        Canvas canvas = new Canvas();
-        Bitmap bitmap = Bitmap.createBitmap(drawable.getIntrinsicWidth(), drawable.getIntrinsicHeight(), Bitmap.Config.ARGB_8888);
-        canvas.setBitmap(bitmap);
-        drawable.setBounds(0, 0, drawable.getIntrinsicWidth(), drawable.getIntrinsicHeight());
-        drawable.draw(canvas);
-        return BitmapDescriptorFactory.fromBitmap(bitmap);
-    }
-
-    public Washroom findWashroomByName (String name){
-        for(Washroom w : washroomList) {
-            if(w.getName().equals(name)) {
+    public Washroom findWashroomByName(String name) {
+        for (Washroom w : washroomList) {
+            if (w.getName().equals(name)) {
                 return w;
             }
         }
         return null;
     }
-
-
 
 
 }
